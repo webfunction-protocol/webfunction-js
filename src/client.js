@@ -6,9 +6,9 @@
  * ordinary-looking method call: `client.listItems({ limit: 10 })`.
  */
 
-import { execute, getJson } from './request.js';
-import { Package, normalizeName } from './package.js';
-import { wrapIfPaginated } from './page.js';
+import { execute, getJson } from "./request.js"
+import { Package, normalizeName } from "./package.js"
+import { wrapIfPaginated } from "./page.js"
 
 /**
  * Property/symbol names that must NEVER be treated as an endpoint lookup.
@@ -19,14 +19,14 @@ import { wrapIfPaginated } from './page.js';
  */
 const NON_ENDPOINT_PROPS = new Set([
   // --- Promise / await machinery ---
-  'then',
-  'catch',
-  'finally',
+  "then",
+  "catch",
+  "finally",
 
   // --- Serialization / coercion ---
-  'toJSON',
-  'toString',
-  'valueOf',
+  "toJSON",
+  "toString",
+  "valueOf",
   Symbol.toPrimitive,
   Symbol.toStringTag,
 
@@ -35,21 +35,21 @@ const NON_ENDPOINT_PROPS = new Set([
   Symbol.asyncIterator,
 
   // --- Object/class internals ---
-  'constructor',
-  'prototype',
-  '__proto__',
-  'nodeType',
+  "constructor",
+  "prototype",
+  "__proto__",
+  "nodeType",
 
   // --- Framework/tooling duck-typing ---
-  '$$typeof', // React element detection
-  'asymmetricMatch', // Jest matcher detection
+  "$$typeof", // React element detection
+  "asymmetricMatch", // Jest matcher detection
 
   // --- Node.js console/inspection ---
-  Symbol.for('nodejs.util.inspect.custom'),
-]);
+  Symbol.for("nodejs.util.inspect.custom"),
+])
 
 function joinUrl(baseUrl, endpointName) {
-  return `${String(baseUrl).replace(/\/+$/, '')}/${String(endpointName).replace(/^\/+/, '')}`;
+  return `${String(baseUrl).replace(/\/+$/, "")}/${String(endpointName).replace(/^\/+/, "")}`
 }
 
 export class Client {
@@ -66,59 +66,56 @@ export class Client {
       // reads become path references into a not-yet-executed batch call.
       // That's a distinct proxy-over-an-unresolved-value design, not just
       // "batch these requests" — deliberately not implemented yet.
-      throw new Error(
-        'webfunction-js: pipelining is not implemented yet. See README for status.',
-      );
+      throw new Error("webfunction-js: pipelining is not implemented yet. See README for status.")
     }
 
     if (!baseUrl) {
-      throw new TypeError('Client: baseUrl is required');
+      throw new TypeError("Client: baseUrl is required")
     }
 
-    this.baseUrl = baseUrl;
-    this.package = pkg;
-    this.bearerAuth = bearerAuth;
-    this.version = version;
+    this.baseUrl = baseUrl
+    this.package = pkg
+    this.bearerAuth = bearerAuth
+    this.version = version
 
     if (pkg) {
-      for (const endpoint of pkg.endpoints) endpoint.setClient(this);
+      for (const endpoint of pkg.endpoints) endpoint.setClient(this)
     }
 
     return new Proxy(this, {
       get: (target, prop, receiver) => {
-        if (typeof prop === 'symbol' || prop in target || NON_ENDPOINT_PROPS.has(prop)) {
-          return Reflect.get(target, prop, receiver);
+        if (typeof prop === "symbol" || prop in target || NON_ENDPOINT_PROPS.has(prop)) {
+          return Reflect.get(target, prop, receiver)
         }
 
-        const endpoint = target.package?.endpoint(String(prop)) ?? null;
+        const endpoint = target.package?.endpoint(String(prop)) ?? null
         if (!endpoint) {
           // Matches Ruby's NoMethodError / PHP's BadMethodCallException:
           // calling an endpoint the package doesn't declare is an error,
           // not a silent pass-through to the server.
-          throw new TypeError(`Undefined endpoint: ${String(prop)}`);
+          throw new TypeError(`Undefined endpoint: ${String(prop)}`)
         }
 
-        return (args = {}) => target.call(endpoint.name, args);
+        return (args = {}) => target.call(endpoint.name, args)
       },
-    });
+    })
   }
 
   /** Calls an endpoint by its raw (hyphenated) name, bypassing method-name lookup. */
   async call(endpointName, args = {}) {
-    const url = joinUrl(this.baseUrl, endpointName);
-    const requestOnce = (callArgs) =>
-      execute(url, { bearerAuth: this.bearerAuth, version: this.version, args: callArgs });
+    const url = joinUrl(this.baseUrl, endpointName)
+    const requestOnce = callArgs => execute(url, { bearerAuth: this.bearerAuth, version: this.version, args: callArgs })
 
-    const raw = await requestOnce(args);
-    return wrapIfPaginated(raw, requestOnce);
+    const raw = await requestOnce(args)
+    return wrapIfPaginated(raw, requestOnce)
   }
 
   /**
    * Fetches the package by calling `url` as a Web Function endpoint (POST).
    */
   static async fromPackageEndpoint(url, { bearerAuth = null, version = null, pipelined = false } = {}) {
-    const raw = await execute(url, { bearerAuth, version, args: {} });
-    return Client.fromPackage(Package.fromObject(raw), { bearerAuth, version, pipelined });
+    const raw = await execute(url, { bearerAuth, version, args: {} })
+    return Client.fromPackage(Package.fromObject(raw), { bearerAuth, version, pipelined })
   }
 
   /**
@@ -127,14 +124,14 @@ export class Client {
    * rather than an `Api-Version` header.
    */
   static async fromUrl(url, { bearerAuth = null, version = null, pipelined = false } = {}) {
-    const raw = await getJson(url, { bearerAuth, version });
-    return Client.fromPackage(Package.fromObject(raw), { bearerAuth, version, pipelined });
+    const raw = await getJson(url, { bearerAuth, version })
+    return Client.fromPackage(Package.fromObject(raw), { bearerAuth, version, pipelined })
   }
 
   /** Builds a client from an already-constructed Package, avoiding an extra request. */
   static fromPackage(pkg, { bearerAuth = null, version = null, pipelined = false } = {}) {
-    return new Client({ baseUrl: pkg.baseUrl, package: pkg, bearerAuth, version, pipelined });
+    return new Client({ baseUrl: pkg.baseUrl, package: pkg, bearerAuth, version, pipelined })
   }
 }
 
-export { normalizeName };
+export { normalizeName }

@@ -3,12 +3,12 @@
  * from the Ruby gem: every error carries a `code` and optional `details`.
  */
 export class WfnError extends Error {
-  constructor(message, { code = 'WFN_ERROR', details = null, cause } = {}) {
-    super(message);
-    this.name = 'WfnError';
-    this.code = code;
-    this.details = details;
-    if (cause !== undefined) this.cause = cause;
+  constructor(message, { code = "WFN_ERROR", details = null, cause } = {}) {
+    super(message)
+    this.name = "WfnError"
+    this.code = code
+    this.details = details
+    if (cause !== undefined) this.cause = cause
   }
 }
 
@@ -20,8 +20,8 @@ export class WfnError extends Error {
  */
 export class BadRequestError extends WfnError {
   constructor(code, message, details) {
-    super(message, { code, details });
-    this.name = 'BadRequestError';
+    super(message, { code, details })
+    this.name = "BadRequestError"
   }
 }
 
@@ -29,23 +29,23 @@ export class BadRequestError extends WfnError {
 export class UnexpectedStatusCodeError extends WfnError {
   constructor(status, body) {
     super(`Unexpected status code: ${status}`, {
-      code: 'WFN_UNEXPECTED_STATUS',
+      code: "WFN_UNEXPECTED_STATUS",
       details: body,
-    });
-    this.name = 'UnexpectedStatusCodeError';
-    this.status = status;
+    })
+    this.name = "UnexpectedStatusCodeError"
+    this.status = status
   }
 }
 
 /** Raised when the response body could not be parsed as JSON. */
 export class JsonParseError extends WfnError {
   constructor(rawBody, cause) {
-    super('Response body was not valid JSON', {
-      code: 'WFN_JSON_PARSE_ERROR',
+    super("Response body was not valid JSON", {
+      code: "WFN_JSON_PARSE_ERROR",
       details: rawBody,
       cause,
-    });
-    this.name = 'JsonParseError';
+    })
+    this.name = "JsonParseError"
   }
 }
 
@@ -55,9 +55,9 @@ export class JsonParseError extends WfnError {
  */
 export class UnresolvedPromiseError extends WfnError {
   constructor() {
-    super('A pipeline promise was read before it resolved', {
-      code: 'WFN_UNRESOLVED_PROMISE',
-    });
-    this.name = 'UnresolvedPromiseError';
+    super("A pipeline promise was read before it resolved", {
+      code: "WFN_UNRESOLVED_PROMISE",
+    })
+    this.name = "UnresolvedPromiseError"
   }
 }

@@ -1,4 +1,4 @@
-import { Type } from './types.js';
+import { Type } from "./types.js"
 
 /**
  * Normalizes an endpoint or method name so dashes, underscores, and camelCase
@@ -6,38 +6,36 @@ import { Type } from './types.js';
  * "listItems" are all equivalent.
  */
 export function normalizeName(name) {
-  return String(name)
-    .replace(/[-_]/g, '')
-    .toLowerCase();
+  return String(name).replace(/[-_]/g, "").toLowerCase()
 }
 
 export class Argument {
   constructor(raw) {
-    this.name = raw.name;
-    this.type = Type.parse(raw.type ?? null);
-    this.required = Boolean(raw.required);
-    this.choices = raw.choices ?? [];
-    this.docs = raw.docs ?? '';
+    this.name = raw.name
+    this.type = Type.parse(raw.type ?? null)
+    this.required = Boolean(raw.required)
+    this.choices = raw.choices ?? []
+    this.docs = raw.docs ?? ""
   }
 
   get optional() {
-    return !this.required;
+    return !this.required
   }
 }
 
 export class Attribute {
   constructor(raw) {
-    this.name = raw.name;
-    this.type = Type.parse(raw.type ?? null);
-    this.nullable = Boolean(raw.nullable);
-    this.values = raw.values ?? [];
+    this.name = raw.name
+    this.type = Type.parse(raw.type ?? null)
+    this.nullable = Boolean(raw.nullable)
+    this.values = raw.values ?? []
   }
 }
 
 export class DocumentedError {
   constructor(raw) {
-    this.code = raw.code;
-    this.docs = raw.docs ?? '';
+    this.code = raw.code
+    this.docs = raw.docs ?? ""
   }
 }
 
@@ -48,90 +46,90 @@ export class DocumentedError {
  */
 export class ObjectSchema {
   constructor(raw) {
-    this.name = raw.name;
-    this._rawArguments = raw.arguments ?? [];
-    this._rawAttributes = raw.attributes ?? [];
+    this.name = raw.name
+    this._rawArguments = raw.arguments ?? []
+    this._rawAttributes = raw.attributes ?? []
   }
 
   get arguments() {
-    return this._rawArguments.map((a) => new Argument(a));
+    return this._rawArguments.map(a => new Argument(a))
   }
 
   get attributes() {
-    return this._rawAttributes.map((a) => new Attribute(a));
+    return this._rawAttributes.map(a => new Attribute(a))
   }
 }
 
 export class Endpoint {
   constructor(raw) {
-    this.name = raw.name;
-    this.docs = raw.docs ?? '';
-    this.returns = Type.parse(raw.returns ?? null);
-    this.group = raw.group ?? null;
-    this.paginated = Boolean(raw.paginated);
-    this.bearerAuth = Boolean(raw.bearer_auth);
-    this.captureBearer = Boolean(raw.capture_bearer);
-    this._rawArguments = raw.arguments ?? [];
-    this._rawErrors = raw.errors ?? [];
-    this._client = null;
+    this.name = raw.name
+    this.docs = raw.docs ?? ""
+    this.returns = Type.parse(raw.returns ?? null)
+    this.group = raw.group ?? null
+    this.paginated = Boolean(raw.paginated)
+    this.bearerAuth = Boolean(raw.bearer_auth)
+    this.captureBearer = Boolean(raw.capture_bearer)
+    this._rawArguments = raw.arguments ?? []
+    this._rawErrors = raw.errors ?? []
+    this._client = null
   }
 
   get arguments() {
-    return this._rawArguments.map((a) => new Argument(a));
+    return this._rawArguments.map(a => new Argument(a))
   }
 
   argument(name) {
-    return this.arguments.find((a) => a.name === name) ?? null;
+    return this.arguments.find(a => a.name === name) ?? null
   }
 
   get errors() {
-    return this._rawErrors.map((e) => new DocumentedError(e));
+    return this._rawErrors.map(e => new DocumentedError(e))
   }
 
   error(code) {
-    return this.errors.find((e) => e.code === code) ?? null;
+    return this.errors.find(e => e.code === code) ?? null
   }
 
   /** Attaches this endpoint to a client so `endpoint.call(args)` works directly. */
   setClient(client) {
-    this._client = client;
+    this._client = client
   }
 
   call(args = {}) {
     if (!this._client) {
-      throw new Error(`Endpoint "${this.name}" is not attached to a client`);
+      throw new Error(`Endpoint "${this.name}" is not attached to a client`)
     }
-    return this._client.call(this.name, args);
+    return this._client.call(this.name, args)
   }
 }
 
 export class Package {
   constructor(raw) {
-    this.name = raw.name ?? null;
-    this.baseUrl = raw.base_url;
-    this.docs = raw.docs ?? '';
-    this.version = raw.version ?? null;
-    this.versions = raw.versions ?? [];
-    this._endpoints = (raw.endpoints ?? []).map((e) => new Endpoint(e));
-    this._rawObjects = raw.objects ?? [];
-    this._rawErrors = raw.errors ?? [];
+    this.name = raw.name ?? null
+    this.baseUrl = raw.base_url
+    this.docs = raw.docs ?? ""
+    this.version = raw.version ?? null
+    this.versions = raw.versions ?? []
+    this._endpoints = (raw.endpoints ?? []).map(e => new Endpoint(e))
+    this._rawObjects = raw.objects ?? []
+    this._rawErrors = raw.errors ?? []
   }
 
   static fromObject(raw) {
-    return new Package(raw ?? {});
+    return new Package(raw ?? {})
   }
 
   get versioned() {
-    return this.versions.length > 0;
+    return this.versions.length > 0
   }
 
   get endpoints() {
-    return this._endpoints;
+    return this._endpoints
   }
 
   endpoint(name) {
-    const key = normalizeName(name);
-    return this._endpoints.find((e) => normalizeName(e.name) === key) ?? null;
+    const key = normalizeName(name)
+    return this._endpoints.find(e => normalizeName(e.name) === key) ?? null
   }
 
   /**
@@ -141,24 +139,24 @@ export class Package {
    *   no members for the requested context.
    */
   object(name, { context } = {}) {
-    const raw = this._rawObjects.find((o) => o.name === name);
-    if (!raw) return null;
+    const raw = this._rawObjects.find(o => o.name === name)
+    if (!raw) return null
 
-    const schema = new ObjectSchema(raw);
-    if (context === 'arguments' && schema.arguments.length === 0) return null;
-    if (context === 'attributes' && schema.attributes.length === 0) return null;
-    return schema;
+    const schema = new ObjectSchema(raw)
+    if (context === "arguments" && schema.arguments.length === 0) return null
+    if (context === "attributes" && schema.attributes.length === 0) return null
+    return schema
   }
 
   get objects() {
-    return this._rawObjects.map((o) => new ObjectSchema(o));
+    return this._rawObjects.map(o => new ObjectSchema(o))
   }
 
   get errors() {
-    return this._rawErrors.map((e) => new DocumentedError(e));
+    return this._rawErrors.map(e => new DocumentedError(e))
   }
 
   error(code) {
-    return this.errors.find((e) => e.code === code) ?? null;
+    return this.errors.find(e => e.code === code) ?? null
   }
 }

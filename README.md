@@ -8,11 +8,11 @@ endpoints, their arguments, return types, and docs. This library reads a
 package and turns each endpoint into an ordinary-looking method call.
 
 ```js
-import { Client } from 'webfunction-js';
+import { Client } from 'webfunction-js'
 
-const client = await Client.fromPackageEndpoint('https://api.example.com/package');
+const client = await Client.fromPackageEndpoint('https://api.example.com/package')
 
-await client.findUser({ id: '123' });
+await client.findUser({ id: '123' })
 // => { id: '123', name: 'Ada' }
 ```
 
@@ -36,15 +36,15 @@ await client.findUser({ id: '123' });
 
 ```js
 // Fetches the package by POSTing to the URL as a Web Function endpoint.
-const client = await Client.fromPackageEndpoint('https://api.example.com/package');
+const client = await Client.fromPackageEndpoint('https://api.example.com/package')
 
 // Or, if the package is served as plain JSON over GET:
-const client = await Client.fromUrl('https://api.example.com/package.json');
+const client = await Client.fromUrl('https://api.example.com/package.json')
 
 // Or, if you already have a package in memory:
-import { Package } from 'webfunction-js';
-const pkg = Package.fromObject({ base_url: '...', endpoints: [...] });
-const client = Client.fromPackage(pkg);
+import { Package } from 'webfunction-js'
+const pkg = Package.fromObject({ base_url: '...', endpoints: [...] })
+const client = Client.fromPackage(pkg)
 ```
 
 All three accept `{ bearerAuth, version }`:
@@ -53,16 +53,16 @@ All three accept `{ bearerAuth, version }`:
 const client = await Client.fromPackageEndpoint(url, {
   bearerAuth: 'my-token',   // sent as `Authorization: Bearer <token>` on every call
   version: '2024-01-01',    // sent as `Api-Version` header (or `api_version` query param via fromUrl)
-});
+})
 ```
 
 ### Calling endpoints
 
 ```js
-await client.listItems({ limit: 10, offset: 20 });
+await client.listItems({ limit: 10, offset: 20 })
 
 // By raw endpoint name, if you'd rather not rely on method-name lookup:
-await client.call('list-items', { limit: 10 });
+await client.call('list-items', { limit: 10 })
 ```
 
 ### Pagination
@@ -71,13 +71,13 @@ A response shaped like `{ page, next, previous }` is automatically wrapped in
 a `Page`:
 
 ```js
-const page = await client.listPeople({ filters: { firstName: 'Joe' } });
+const page = await client.listPeople({ filters: { firstName: 'Joe' } })
 
-page.page;        // => the current page's items
-page.hasNext;      // => true/false
-page.hasPrevious;  // => true/false
+page.page         // => the current page's items
+page.hasNext      // => true/false
+page.hasPrevious  // => true/false
 
-const next = await page.nextPage(); // posts the opaque `next` cursor back to the same endpoint
+const next = await page.nextPage() // posts the opaque `next` cursor back to the same endpoint
 ```
 
 ### Errors
@@ -85,13 +85,13 @@ const next = await page.nextPage(); // posts the opaque `next` cursor back to th
 Every failure is a `WfnError` subclass, carrying a `code` and `details`:
 
 ```js
-import { BadRequestError } from 'webfunction-js';
+import { BadRequestError } from 'webfunction-js'
 
 try {
-  await client.findUser({ id: 'missing' });
+  await client.findUser({ id: 'missing' })
 } catch (err) {
   if (err instanceof BadRequestError) {
-    console.error(err.code, err.message, err.details);
+    console.error(err.code, err.message, err.details)
     // => "USER_NOT_FOUND" "No user with that id." { id: "missing" }
   }
 }
@@ -107,25 +107,25 @@ try {
 ### Inspecting a package
 
 ```js
-const pkg = client.package;
+const pkg = client.package
 
-pkg.name;        // "Example API"
-pkg.baseUrl;      // "https://api.example.com/"
-pkg.versioned;    // true/false
-pkg.versions;     // ["2023-06-01", "2024-01-01"]
-pkg.endpoints;    // [Endpoint, ...]
+pkg.name          // "Example API"
+pkg.baseUrl       // "https://api.example.com/"
+pkg.versioned     // true/false
+pkg.versions      // ["2023-06-01", "2024-01-01"]
+pkg.endpoints     // [Endpoint, ...]
 
-const endpoint = pkg.endpoint('find-user');
-endpoint.docs;     // "Retrieves user data."
-endpoint.group;    // "Users"
-endpoint.returns;  // a Type — see below
-endpoint.arguments; // [Argument, ...]
-endpoint.argument('id').required; // true
+const endpoint = pkg.endpoint('find-user')
+endpoint.docs      // "Retrieves user data."
+endpoint.group     // "Users"
+endpoint.returns   // a Type — see below
+endpoint.arguments // [Argument, ...]
+endpoint.argument('id').required // true
 
-const arg = endpoint.argument('id');
-arg.type.toString(); // "string"
-arg.required;        // true
-arg.choices;         // []
+const arg = endpoint.argument('id')
+arg.type.toString()  // "string"
+arg.required         // true
+arg.choices          // []
 ```
 
 Named object schemas (referenced as `object.<name>` in types), looked up by
@@ -133,8 +133,8 @@ context since the same object can appear in an arguments context or an
 attributes context:
 
 ```js
-const user = pkg.object('user', { context: 'attributes' });
-user.attributes; // [Attribute, ...]
+const user = pkg.object('user', { context: 'attributes' })
+user.attributes  // [Attribute, ...]
 ```
 
 ### Types
@@ -143,14 +143,14 @@ user.attributes; // [Attribute, ...]
 instances, not plain strings:
 
 ```js
-const type = endpoint.argument('email').type;
+const type = endpoint.argument('email').type
 
-type.toString();       // "string.email"
-type.format('base');    // "string"
-type.format('compact'); // "email"
-type.valid('ada@example.com'); // true
-type.valid('nope');            // false
-type.objects; // names of any `object.<name>` refs found within the type
+type.toString()        // "string.email"
+type.format('base')    // "string"
+type.format('compact') // "email"
+type.valid('ada@example.com')  // true
+type.valid('nope')             // false
+type.objects  // names of any `object.<name>` refs found within the type
 ```
 
 Base types: `string`, `number`, `object`, `boolean`, `null`, plus `array<T>`
@@ -165,13 +165,13 @@ refinements: `u32`, `u64`, `i32`, `i64`, `f32`, `f64`, `timestamp`.
 ### Custom HTTP client
 
 ```js
-import { setHttpClient } from 'webfunction-js';
+import { setHttpClient } from 'webfunction-js'
 
 // Receives (url, headers, bodyString); must return [statusCode, rawBodyString].
 setHttpClient(async (url, headers, body) => {
-  const res = await myHttpLib.post(url, { headers, body });
-  return [res.status, res.bodyText];
-});
+  const res = await myHttpLib.post(url, { headers, body })
+  return [res.status, res.bodyText]
+})
 ```
 
 Handy for tests — return a canned response without a real request.
