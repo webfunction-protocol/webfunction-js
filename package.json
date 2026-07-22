@@ -1,0 +1,14 @@
+{
+  "name": "webfunction-js",
+  "version": "0.1.0",
+  "description": "JS client for the Web Function protocol (webfunction.org)",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
