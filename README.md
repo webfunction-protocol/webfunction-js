@@ -8,11 +8,11 @@ endpoints, their arguments, return types, and docs. This library reads a
 package and turns each endpoint into an ordinary-looking method call.
 
 ```js
-import { Client } from 'webfunction-js'
+import { Client } from 'webfunction-js';
 
-const client = await Client.fromPackageEndpoint('https://api.example.com/package')
+const client = await Client.fromPackageEndpoint('https://api.example.com/package');
 
-await client.findUser({ id: '123' })
+await client.findUser({ id: '123' });
 // => { id: '123', name: 'Ada' }
 ```
 
@@ -36,15 +36,15 @@ await client.findUser({ id: '123' })
 
 ```js
 // Fetches the package by POSTing to the URL as a Web Function endpoint.
-const client = await Client.fromPackageEndpoint('https://api.example.com/package')
+const client = await Client.fromPackageEndpoint('https://api.example.com/package');
 
 // Or, if the package is served as plain JSON over GET:
-const client = await Client.fromUrl('https://api.example.com/package.json')
+const client = await Client.fromUrl('https://api.example.com/package.json');
 
 // Or, if you already have a package in memory:
-import { Package } from 'webfunction-js'
-const pkg = Package.fromObject({ base_url: '...', endpoints: [...] })
-const client = Client.fromPackage(pkg)
+import { Package } from 'webfunction-js';
+const pkg = Package.fromObject({ base_url: '...', endpoints: [...] });
+const client = Client.fromPackage(pkg);
 ```
 
 All three accept `{ bearerAuth, version }`:
@@ -53,16 +53,16 @@ All three accept `{ bearerAuth, version }`:
 const client = await Client.fromPackageEndpoint(url, {
   bearerAuth: 'my-token',   // sent as `Authorization: Bearer <token>` on every call
   version: '2024-01-01',    // sent as `Api-Version` header (or `api_version` query param via fromUrl)
-})
+});
 ```
 
 ### Calling endpoints
 
 ```js
-await client.listItems({ limit: 10, offset: 20 })
+await client.listItems({ limit: 10, offset: 20 });
 
 // By raw endpoint name, if you'd rather not rely on method-name lookup:
-await client.call('list-items', { limit: 10 })
+await client.call('list-items', { limit: 10 });
 ```
 
 ### Pagination
@@ -71,13 +71,13 @@ A response shaped like `{ page, next, previous }` is automatically wrapped in
 a `Page`:
 
 ```js
-const page = await client.listPeople({ filters: { firstName: 'Joe' } })
+const page = await client.listPeople({ filters: { firstName: 'Joe' } });
 
-page.page         // => the current page's items
-page.hasNext      // => true/false
-page.hasPrevious  // => true/false
+page.page;        // => the current page's items
+page.hasNext;      // => true/false
+page.hasPrevious;  // => true/false
 
-const next = await page.nextPage() // posts the opaque `next` cursor back to the same endpoint
+const next = await page.nextPage(); // posts the opaque `next` cursor back to the same endpoint
 ```
 
 ### Errors
@@ -85,13 +85,13 @@ const next = await page.nextPage() // posts the opaque `next` cursor back to the
 Every failure is a `WfnError` subclass, carrying a `code` and `details`:
 
 ```js
-import { BadRequestError } from 'webfunction-js'
+import { BadRequestError } from 'webfunction-js';
 
 try {
-  await client.findUser({ id: 'missing' })
+  await client.findUser({ id: 'missing' });
 } catch (err) {
   if (err instanceof BadRequestError) {
-    console.error(err.code, err.message, err.details)
+    console.error(err.code, err.message, err.details);
     // => "USER_NOT_FOUND" "No user with that id." { id: "missing" }
   }
 }
@@ -107,25 +107,27 @@ try {
 ### Inspecting a package
 
 ```js
-const pkg = client.package
+const pkg = client.package;
 
-pkg.name          // "Example API"
-pkg.baseUrl       // "https://api.example.com/"
-pkg.versioned     // true/false
-pkg.versions      // ["2023-06-01", "2024-01-01"]
-pkg.endpoints     // [Endpoint, ...]
+pkg.name;        // "Example API"
+pkg.baseUrl;      // "https://api.example.com/"
+pkg.versioned;    // true/false
+pkg.versions;     // ["2023-06-01", "2024-01-01"]
+pkg.supportsPipelining; // true/false
+pkg.pipelineUrl;  // "https://api.example.com/pipeline", or null
+pkg.endpoints;    // [Endpoint, ...]
 
-const endpoint = pkg.endpoint('find-user')
-endpoint.docs      // "Retrieves user data."
-endpoint.group     // "Users"
-endpoint.returns   // a Type — see below
-endpoint.arguments // [Argument, ...]
-endpoint.argument('id').required // true
+const endpoint = pkg.endpoint('find-user');
+endpoint.docs;     // "Retrieves user data."
+endpoint.group;    // "Users"
+endpoint.returns;  // a Type — see below
+endpoint.arguments; // [Argument, ...]
+endpoint.argument('id').required; // true
 
-const arg = endpoint.argument('id')
-arg.type.toString()  // "string"
-arg.required         // true
-arg.choices          // []
+const arg = endpoint.argument('id');
+arg.type.toString(); // "string"
+arg.required;        // true
+arg.choices;         // []
 ```
 
 Named object schemas (referenced as `object.<name>` in types), looked up by
@@ -133,8 +135,8 @@ context since the same object can appear in an arguments context or an
 attributes context:
 
 ```js
-const user = pkg.object('user', { context: 'attributes' })
-user.attributes  // [Attribute, ...]
+const user = pkg.object('user', { context: 'attributes' });
+user.attributes; // [Attribute, ...]
 ```
 
 ### Types
@@ -143,14 +145,14 @@ user.attributes  // [Attribute, ...]
 instances, not plain strings:
 
 ```js
-const type = endpoint.argument('email').type
+const type = endpoint.argument('email').type;
 
-type.toString()        // "string.email"
-type.format('base')    // "string"
-type.format('compact') // "email"
-type.valid('ada@example.com')  // true
-type.valid('nope')             // false
-type.objects  // names of any `object.<name>` refs found within the type
+type.toString();       // "string.email"
+type.format('base');    // "string"
+type.format('compact'); // "email"
+type.valid('ada@example.com'); // true
+type.valid('nope');            // false
+type.objects; // names of any `object.<name>` refs found within the type
 ```
 
 Base types: `string`, `number`, `object`, `boolean`, `null`, plus `array<T>`
@@ -165,31 +167,73 @@ refinements: `u32`, `u64`, `i32`, `i64`, `f32`, `f64`, `timestamp`.
 ### Custom HTTP client
 
 ```js
-import { setHttpClient } from 'webfunction-js'
+import { setHttpClient } from 'webfunction-js';
 
 // Receives (url, headers, bodyString); must return [statusCode, rawBodyString].
 setHttpClient(async (url, headers, body) => {
-  const res = await myHttpLib.post(url, { headers, body })
-  return [res.status, res.bodyText]
-})
+  const res = await myHttpLib.post(url, { headers, body });
+  return [res.status, res.bodyText];
+});
 ```
 
 Handy for tests — return a canned response without a real request.
 
-## Not implemented yet: pipelining
+## Pipelining
 
-Ruby's pipelining is more than request batching: under `pipelined: true`,
-each call returns a `Promise` standing in for a not-yet-computed value.
-Reading a property on that promise *before* it resolves (e.g. `user['id']`)
-doesn't give you a value — it gives you a path reference into the future
-result, which gets sent to the server as part of the next call in the batch.
-The server fills it in when the whole pipeline actually runs.
+A package signals pipelining support by declaring `pipeline_url`
+(webfunction.org/pipelining, "Discovery"). Build a pipelined client the same
+way as any other, and calls queue instead of executing immediately:
 
-That's a second, different kind of dynamic-dispatch proxy layered on top of
-the one this module already has (one that records property-access paths on
-a value that doesn't exist yet), and it deserves its own design pass —
-particularly around what "reading into an unresolved value" should feel like
-in JS versus Ruby. Flagging it clearly rather than guessing at it.
+```js
+const client = await Client.fromPackageEndpoint(url, { pipelined: true });
+
+const user  = client.findUser({ id: '123' });          // queued, not sent yet
+const order = client.createOrder({ userId: user.id }); // references user's future "id"
+
+const result = await order.resolve(); // sends both steps in ONE request
+// => { id: 'order-1', userId: '123' }
+
+user.value; // already filled in too — resolving one promise runs the whole batch
+```
+
+`user.id` here doesn't give a value — it gives a `Path` reference
+(`"$[0].id"`) that gets sent as-is in `order`'s request body; the server
+substitutes the real value when it executes step 0.
+
+A couple of things worth knowing:
+
+- **Not a real JS `Promise`.** Nothing runs until you call `.resolve()` (or
+  `client.pipeline.execute()` directly) — there's no background execution,
+  and `await`-ing an unresolved one just gives the object back rather than
+  hanging (it's explicitly not treated as thenable).
+- **Only the top-level value a call returns supports `.resolve()`/`.value`.**
+  Calling those on a nested field reference (`user.id.resolve()`) throws
+  clearly rather than silently building a wrong path.
+- **Literal argument strings starting with `$` are escaped automatically.**
+  `client.findUser({ id: '$100' })` sends `"\$100"`, so the server reads it
+  as the literal string `$100` rather than a broken JSONPath reference
+  (webfunction.org/pipelining, "Escaping"). This only applies to real
+  string values you pass in — a `Path`/`PipelinePromise` reference like
+  `user.id` is left untouched, since that's a genuine reference.
+- Building steps by hand instead of through the endpoint sugar? `Pipeline`,
+  `PipelinePromise`, `Path`, and `escapeForPipeline` are all exported
+  directly:
+
+  ```js
+  import { Pipeline, escapeForPipeline } from 'webfunction-js';
+
+  const pipeline = new Pipeline('https://api.example.com/run-pipeline');
+  const user = pipeline.addStep({
+    url: 'https://api.example.com/find-user',
+    headers: {},
+    body: escapeForPipeline({ id: '123' }),
+  });
+  ```
+
+- `pipeline.execute({ returns })` accepts `'all'` (default — fills every
+  promise), `'last'` (fills only the last), or a JSONPath string (returns the
+  server's evaluation of that expression directly; fills no promises,
+  matching the Ruby gem).
 
 ## Tests
 

@@ -9,6 +9,7 @@
 import { execute, getJson } from "./request.js"
 import { Package, normalizeName } from "./package.js"
 import { wrapIfPaginated } from "./page.js"
+import { Pipeline, escapeForPipeline } from "./pipeline.js"
 
 /**
  * Property/symbol names that must NEVER be treated as an endpoint lookup.
@@ -61,22 +62,27 @@ export class Client {
    * @param {{ baseUrl: string, package?: Package|null, bearerAuth?: string|null, version?: string|null, pipelined?: boolean }} options
    */
   constructor({ baseUrl, package: pkg = null, bearerAuth = null, version = null, pipelined = false } = {}) {
-    if (pipelined) {
-      // Ruby's pipelining returns lazy "Promise" objects whose property
-      // reads become path references into a not-yet-executed batch call.
-      // That's a distinct proxy-over-an-unresolved-value design, not just
-      // "batch these requests" — deliberately not implemented yet.
-      throw new Error("webfunction-js: pipelining is not implemented yet. See README for status.")
-    }
-
     if (!baseUrl) {
       throw new TypeError("Client: baseUrl is required")
+    }
+
+    if (pipelined) {
+      // A package signals pipelining support by declaring `pipeline_url`
+      // (webfunction.org/pipelining, "Discovery"). Without it there's no
+      // URL to send batched steps to.
+      if (!pkg?.pipelineUrl) {
+        throw new Error("Client: pipelined: true was requested, but the package does not declare a pipeline_url.")
+      }
+      this._pipeline = new Pipeline(pkg.pipelineUrl)
+    } else {
+      this._pipeline = null
     }
 
     this.baseUrl = baseUrl
     this.package = pkg
     this.bearerAuth = bearerAuth
     this.version = version
+    this.pipelined = pipelined
 
     if (pkg) {
       for (const endpoint of pkg.endpoints) endpoint.setClient(this)
@@ -101,8 +107,45 @@ export class Client {
     })
   }
 
-  /** Calls an endpoint by its raw (hyphenated) name, bypassing method-name lookup. */
-  async call(endpointName, args = {}) {
+  /**
+   * Calls an endpoint by its raw (hyphenated) name, bypassing method-name
+   * lookup. Under a pipelined client, this returns a PipelinePromise
+   * synchronously (queued, not yet executed) rather than a real Promise —
+   * call `.resolve()` on it, or `pipeline.execute()`, to actually run it.
+   */
+  call(endpointName, args = {}) {
+    if (this.pipelined) {
+      return this._queueStep(endpointName, args)
+    }
+    return this._executeCall(endpointName, args)
+  }
+
+  /** The underlying Pipeline for a pipelined client, or null otherwise. */
+  get pipeline() {
+    return this._pipeline
+  }
+
+  _buildHeaders() {
+    const headers = {}
+    if (this.bearerAuth) headers.Authorization = `Bearer ${this.bearerAuth}`
+    if (this.version) headers["Api-Version"] = this.version
+    return headers
+  }
+
+  _queueStep(endpointName, args) {
+    const url = joinUrl(this.baseUrl, endpointName)
+    return this._pipeline.addStep({
+      url,
+      headers: this._buildHeaders(),
+      // Literal argument strings that happen to start with "$" must be
+      // escaped, or the pipeline server will misread them as a broken
+      // JSONPath reference (webfunction.org/pipelining, "Escaping").
+      // Path/PipelinePromise values (genuine references) pass through as-is.
+      body: escapeForPipeline(args),
+    })
+  }
+
+  async _executeCall(endpointName, args) {
     const url = joinUrl(this.baseUrl, endpointName)
     const requestOnce = callArgs => execute(url, { bearerAuth: this.bearerAuth, version: this.version, args: callArgs })
 

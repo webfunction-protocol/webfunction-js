@@ -110,6 +110,9 @@ export class Package {
     this.docs = raw.docs ?? ""
     this.version = raw.version ?? null
     this.versions = raw.versions ?? []
+    // Presence of `pipeline_url` is how a package signals pipelining support
+    // (see webfunction.org/pipelining, "Discovery").
+    this.pipelineUrl = raw.pipeline_url ?? null
     this._endpoints = (raw.endpoints ?? []).map(e => new Endpoint(e))
     this._rawObjects = raw.objects ?? []
     this._rawErrors = raw.errors ?? []
@@ -121,6 +124,10 @@ export class Package {
 
   get versioned() {
     return this.versions.length > 0
+  }
+
+  get supportsPipelining() {
+    return this.pipelineUrl !== null
   }
 
   get endpoints() {
