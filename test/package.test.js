@@ -54,3 +54,13 @@ test("looks up object schemas by attribute context", () => {
   assert.equal(pkg.object("user", { context: "arguments" }), null)
   assert.equal(pkg.object("does-not-exist"), null)
 })
+
+test("reports pipelining support based on presence of pipeline_url", () => {
+  const withoutPipeline = Package.fromObject(raw)
+  assert.equal(withoutPipeline.supportsPipelining, false)
+  assert.equal(withoutPipeline.pipelineUrl, null)
+
+  const withPipeline = Package.fromObject({ ...raw, pipeline_url: "https://api.example.com/pipeline" })
+  assert.equal(withPipeline.supportsPipelining, true)
+  assert.equal(withPipeline.pipelineUrl, "https://api.example.com/pipeline")
+})

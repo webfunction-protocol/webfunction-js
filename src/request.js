@@ -24,7 +24,7 @@ async function defaultHttpClient(url, headers, body) {
 }
 
 function buildHeaders({ bearerAuth, version } = {}) {
-  const headers = { "Content-Type": "application/json" }
+  const headers = { "Content-Type": "application/json", Accept: "application/json" }
   if (bearerAuth) headers.Authorization = `Bearer ${bearerAuth}`
   if (version) headers["Api-Version"] = version
   return headers

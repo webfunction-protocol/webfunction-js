@@ -7,6 +7,10 @@
   "exports": {
     ".": "./src/index.js"
   },
+  "scripts": {
+    "test": "node --test",
+    "test:watch": "node --test --watch"
+  },
   "engines": {
     "node": ">=18"
   },
