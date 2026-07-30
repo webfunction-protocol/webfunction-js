@@ -1,5 +1,5 @@
 {
-  "name": "webfunction-js",
+  "name": "@webfunction/webfunction-js",
   "version": "0.1.0",
   "description": "JS client for the Web Function protocol (webfunction.org)",
   "type": "module",
