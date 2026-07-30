@@ -193,6 +193,11 @@ export class Pipeline {
     this.#url = url
   }
 
+  /** Number of steps queued but not yet executed. */
+  get pendingCount() {
+    return this.#steps.length
+  }
+
   addStep(step) {
     const n = this.#promises.length
     const promise = new PipelinePromise(this, `$[${n}]`)

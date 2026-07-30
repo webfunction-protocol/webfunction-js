@@ -195,3 +195,66 @@ test("pipelined calls send bearer auth and version as per-step headers", async (
   assert.equal(capturedHeaders["Api-Version"], "2024-01-01")
   resetHttpClient()
 })
+
+test("pipelined can be safely flipped on after construction", async () => {
+  setHttpClient(async () => [200, JSON.stringify([{ id: "1" }])])
+
+  const pkg = Package.fromObject({ ...SAMPLE_PACKAGE, pipeline_url: "https://api.example.com/pipeline" })
+  const client = Client.fromPackage(pkg) // starts non-pipelined
+  assert.equal(client.pipelined, false)
+  assert.equal(client.pipeline, null)
+
+  client.pipelined = true
+  assert.equal(client.pipelined, true)
+  assert.ok(client.pipeline) // Pipeline created lazily
+
+  const user = client.findUser({ id: "1" })
+  assert.equal(String(user.id), "$[0].id") // queued, not executed
+  await user.resolve()
+  resetHttpClient()
+})
+
+test("flipping pipelined on throws clearly if the package has no pipeline_url", () => {
+  const pkg = Package.fromObject(SAMPLE_PACKAGE) // no pipeline_url
+  const client = Client.fromPackage(pkg)
+  assert.throws(() => {
+    client.pipelined = true
+  }, /does not declare a pipeline_url/)
+})
+
+test("flipping pipelined off is refused while steps are still queued and unresolved", () => {
+  const pkg = Package.fromObject({ ...SAMPLE_PACKAGE, pipeline_url: "https://api.example.com/pipeline" })
+  const client = Client.fromPackage(pkg, { pipelined: true })
+
+  client.findUser({ id: "1" }) // queues a step, never resolved
+  assert.throws(() => {
+    client.pipelined = false
+  }, /unresolved queued steps/)
+  assert.equal(client.pipelined, true) // unchanged
+})
+
+test("flipping pipelined off succeeds once the pipeline has no pending steps", async () => {
+  setHttpClient(async () => [200, JSON.stringify([{ id: "1" }])])
+
+  const pkg = Package.fromObject({ ...SAMPLE_PACKAGE, pipeline_url: "https://api.example.com/pipeline" })
+  const client = Client.fromPackage(pkg, { pipelined: true })
+
+  await client.findUser({ id: "1" }).resolve() // resolves the only queued step
+  client.pipelined = false
+  assert.equal(client.pipelined, false)
+  resetHttpClient()
+})
+
+test("toggling pipelined off then on again reuses the same Pipeline instance", async () => {
+  setHttpClient(async () => [200, JSON.stringify([{ id: "1" }])])
+
+  const pkg = Package.fromObject({ ...SAMPLE_PACKAGE, pipeline_url: "https://api.example.com/pipeline" })
+  const client = Client.fromPackage(pkg, { pipelined: true })
+
+  await client.findUser({ id: "1" }).resolve()
+  const pipelineRef = client.pipeline
+  client.pipelined = false
+  client.pipelined = true
+  assert.equal(client.pipeline, pipelineRef)
+  resetHttpClient()
+})

@@ -66,23 +66,13 @@ export class Client {
       throw new TypeError("Client: baseUrl is required")
     }
 
-    if (pipelined) {
-      // A package signals pipelining support by declaring `pipeline_url`
-      // (webfunction.org/pipelining, "Discovery"). Without it there's no
-      // URL to send batched steps to.
-      if (!pkg?.pipelineUrl) {
-        throw new Error("Client: pipelined: true was requested, but the package does not declare a pipeline_url.")
-      }
-      this._pipeline = new Pipeline(pkg.pipelineUrl)
-    } else {
-      this._pipeline = null
-    }
-
     this.baseUrl = baseUrl
     this.package = pkg
     this.bearerAuth = bearerAuth
     this.version = version
-    this.pipelined = pipelined
+    this._pipeline = null
+    this._pipelined = false
+    this.pipelined = pipelined // via the setter below, so it's created/validated consistently
 
     if (pkg) {
       for (const endpoint of pkg.endpoints) endpoint.setClient(this)
@@ -120,7 +110,36 @@ export class Client {
     return this._executeCall(endpointName, args)
   }
 
-  /** The underlying Pipeline for a pipelined client, or null otherwise. */
+  get pipelined() {
+    return this._pipelined
+  }
+
+  /**
+   * Flipping this is safe in both directions:
+   * - Turning it on lazily creates the underlying Pipeline (or reuses one
+   *   from a previous "on" period, preserving any steps still queued on it)
+   *   — throws if the package has no `pipeline_url` to send steps to.
+   * - Turning it off is refused while that Pipeline still has unresolved
+   *   queued steps, so a toggle can't silently strand them.
+   */
+  set pipelined(value) {
+    const next = Boolean(value)
+
+    if (next && !this._pipeline) {
+      if (!this.package?.pipelineUrl) {
+        throw new Error("Client: cannot enable pipelining — the package does not declare a pipeline_url.")
+      }
+      this._pipeline = new Pipeline(this.package.pipelineUrl)
+    }
+
+    if (!next && this._pipeline && this._pipeline.pendingCount > 0) {
+      throw new Error("Client: cannot disable pipelining — the pipeline has unresolved queued steps. " + "Resolve them (or call pipeline.execute()) first.")
+    }
+
+    this._pipelined = next
+  }
+
+  /** The underlying Pipeline once pipelining has been turned on at least once, else null. */
   get pipeline() {
     return this._pipeline
   }
