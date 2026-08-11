@@ -8,7 +8,7 @@ endpoints, their arguments, return types, and docs. This library reads a
 package and turns each endpoint into an ordinary-looking method call.
 
 ```js
-import { Client } from 'webfunction-js'
+import { Client } from 'webfunction'
 
 const client = await Client.fromPackageEndpoint('https://api.example.com/package')
 
@@ -42,7 +42,7 @@ const client = await Client.fromPackageEndpoint('https://api.example.com/package
 const client = await Client.fromUrl('https://api.example.com/package.json')
 
 // Or, if you already have a package in memory:
-import { Package } from 'webfunction-js'
+import { Package } from 'webfunction'
 const pkg = Package.fromObject({ base_url: '...', endpoints: [...] })
 const client = Client.fromPackage(pkg)
 ```
@@ -85,7 +85,7 @@ const next = await page.nextPage() // posts the opaque `next` cursor back to the
 Every failure is a `WfnError` subclass, carrying a `code` and `details`:
 
 ```js
-import { BadRequestError } from 'webfunction-js'
+import { BadRequestError } from 'webfunction'
 
 try {
   await client.findUser({ id: 'missing' })
@@ -167,7 +167,7 @@ refinements: `u32`, `u64`, `i32`, `i64`, `f32`, `f64`, `timestamp`.
 ### Custom HTTP client
 
 ```js
-import { setHttpClient } from 'webfunction-js'
+import { setHttpClient } from 'webfunction'
 
 // Receives (url, headers, bodyString); must return [statusCode, rawBodyString].
 setHttpClient(async (url, headers, body) => {
@@ -226,7 +226,7 @@ A couple of things worth knowing:
   directly:
 
   ```js
-  import { Pipeline, escapeForPipeline } from 'webfunction-js'
+  import { Pipeline, escapeForPipeline } from 'webfunction'
 
   const pipeline = new Pipeline('https://api.example.com/run-pipeline')
   const user = pipeline.addStep({
