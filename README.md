@@ -1,7 +1,7 @@
 # webfunction-js
 
 JS client for the [Web Function](https://webfunction.org) protocol, modeled
-on [Robin Clart's Ruby gem](https://github.com/robinclart/web_function).
+on the [official Ruby gem](https://github.com/webfunction-protocol/webfunction-ruby).
 
 A Web Function API publishes a **package**: a JSON document listing its
 endpoints, their arguments, return types, and docs. This library reads a
